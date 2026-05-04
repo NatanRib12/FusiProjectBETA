@@ -6,10 +6,13 @@ function validateWorkout(validateWorkoutsData){
         && validateWorkoutsData.charge > 0 && validateWorkoutsData.charge <= 10 
         && Number.isFinite(validateWorkoutsData.charge)){
 
-            // Processa dados recebidos do objeto finalData de app.js
+        // Processa dados recebidos do objeto finalData de app.js
         let traningLoad = (validateWorkoutsData.distance * validateWorkoutsData.bpm * validateWorkoutsData.charge) / 100;
         let recovery = 100 - traningLoad;
         let recommendation = "";
+
+        traningLoad = Math.floor(traningLoad);
+        recovery = Math.floor(recovery)
 
         // Após calcular recovery, processa nível de recomendação
         if (recovery > 70 && recovery <= 100) {

@@ -21,30 +21,38 @@ http.createServer((req,res) => {
             body += chunk.toString()
         });
 
-        req.on('end', () => {
+        req.on('end', async () => {
             // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
 
             try {
-                    const finalData = JSON.parse(body)
-                    const workoutsData = require('./service')
-                    const resultworkoutData = workoutsData(finalData)
-                    const saveData = require('./db')
+                    const finalData = JSON.parse(body);
+                    const workoutsData = require('./service');
+                    const resultworkoutData = workoutsData(finalData);
+                    const saveData = require('./db');
 
                     if (resultworkoutData == false){
-                        res.statusCode = 400
-                        console.log("Caiu no if do try")
-                        res.end("Bad request")
-                    } else {
-                        res.statusCode = 200
-                        saveData(finalData, resultworkoutData)
-                        res.end("dados recebidos")
+                        res.statusCode = 400;
+                        console.log("Caiu no if do try");
+                        res.end("Erro ao processar informações.");
+                    } 
+                    else {
+                        const resultSaveData = await saveData(finalData, resultworkoutData)
+                        if (resultSaveData == false){
+                            console.log("Erro ao processar dados");
+                            res.statusCode = 400;
+                            res.end("Bad request");
+                        } else {
+                            console.log("Treino registrado");
+                            res.statusCode = 200;
+                            res.end("Treino registrado");
+                        }
                     }
                     
                 }     
             catch (error){
                     res.statusCode = 400 
-                    console.log("Caiu no catch")   
-                    res.end()
+                    console.log(error.message)   
+                    res.end("Erro no processamento de dados.")
                 }
         });
     }
