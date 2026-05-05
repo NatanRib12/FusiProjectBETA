@@ -1,4 +1,8 @@
-// Importa http do módulo http e conecta na porta 8080
+const checkLogin = require('./database/databaseLogin');
+const saveDataRegister = require('./database/databaseRegister');
+const registerData = require('./service/register');
+const saveData = require('./database/databaseWorkout');
+const workoutsData = require('./service/workout');
 const http = require('http')
 const port = 8080
 
@@ -6,50 +10,53 @@ http.createServer((req,res) => {
     let bodyWorkoutData = '';
     let bodyRegister = '';
     let bodyLogin = '';
-
+ 
     if(req.url == '/') {
         res.write('<h1>Tela inicial</h1>')
         res.end()
     }
 
-    //FAZER LOGIN FUNCIONAR
-    // // Login
-    // else if (req.url == '/login' && req.method == 'POST') {
-    //     req.on('data', chunk => {
-    //         bodyLogin += chunk.toString()
-    //     });
+    // Login
+    else if (req.url == '/login' && req.method == 'POST') {
+        req.on('data', chunk => {
+            bodyLogin += chunk.toString()
+        });
 
-    //     req.on('end', async () => {
-    //         // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
+        req.on('end', async () => {
+            // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
 
-    //         try{
-    //                 const finalLogin = JSON.parse(bodyLogin);
-    //                 const resultLoginData = loginData(finalLogin);
-    //                 const saveDataRegister = require('./database/databaseRegister')
-                    
-    //                 if( resultRegisterData == false ){
-    //                     console.log("Registro de usuário inválido");
-    //                     res.statusCode = 400;
-    //                     res.end("Registro de usuário inválido");
-    //                 } else {
-    //                     const resultSaveData = await saveDataRegister(finalRegister);
-    //                     if (resultSaveData == false){
-    //                         console.log("Dados não foram salvos");
-    //                         res.statusCode = 400;
-    //                         res.end("Houve um erro durante o registro dos dados");
-    //                     } else {
-    //                         console.log("Dados salvos com sucesso")
-    //                         res.status = 200;
-    //                         res.end("Dados salvos com sucesso");
-    //                     }
-    //                 }
-    //             } catch (error) {
-    //                 res.statusCode = 400 
-    //                 console.log(error.message)   
-    //                 res.end("Erro no processamento de dados.")
-    //             }
-    //     });
-    // }
+            try{
+                    const finalLogin = JSON.parse(bodyLogin);
+                    const resultLoginData = await checkLogin(finalLogin);
+
+                    if( resultLoginData == false ){
+                        console.log("Registro de usuário não encontrado");
+                        res.statusCode = 401;
+                        res.setHeader('Content-type', 'application/json');
+
+                        res.end(JSON.stringify({
+                            message: "Credências inválidas"
+                        }));
+                    } else {
+                        res.statusCode = 200;
+                        res.setHeader('Content-type', 'application/json');
+
+                        res.end(JSON.stringify({
+                            athleteId: resultLoginData.id
+                        }))
+                    }
+
+                } catch (error) {
+                    res.statusCode = 401 
+                    console.log(error.message)   
+                    res.setHeader('Content-type', 'application/json');
+
+                    res.end(JSON.stringify({
+                        message: "Erro ao realizar login"
+                    }));
+                }
+        });
+    }
 
     // REGISTER
     else if (req.url == '/register' && req.method == 'POST') {
@@ -61,31 +68,46 @@ http.createServer((req,res) => {
             // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
 
             try{
-                    const finalRegister = JSON.parse(bodyRegister);
-                    const registerData = require('./service/register');
+                    const finalRegister = JSON.parse(bodyRegister);  
                     const resultRegisterData = registerData(finalRegister);
-                    const saveDataRegister = require('./database/databaseRegister')
                     
                     if( resultRegisterData == false ){
                         console.log("Registro de usuário inválido");
                         res.statusCode = 400;
-                        res.end("Registro de usuário inválido");
+                        res.setHeader('Content-type', 'application/json');
+
+                        res.end(JSON.stringify({
+                            message: "Erro ao registrar usuário"
+                        }));
                     } else {
                         const resultSaveData = await saveDataRegister(finalRegister);
                         if (resultSaveData == false){
                             console.log("Dados não foram salvos");
                             res.statusCode = 400;
-                            res.end("Houve um erro durante o registro dos dados");
+                            res.setHeader('Content-type', 'application/json');
+
+                            res.end(JSON.stringify({
+                                message: "Ocorreu um erro durante o registro de usuário"
+                            }));
                         } else {
                             console.log("Dados salvos com sucesso")
-                            res.status = 200;
-                            res.end("Dados salvos com sucesso");
+                            res.statusCode = 200;
+                            res.setHeader('Content-type', 'application/json');
+
+                            res.end(JSON.stringify({
+                                message: "Conta criada com sucesso!",
+                            }));
+                            // localStorage.
                         }
                     }
+
                 } catch (error) {
                     res.statusCode = 400 
-                    console.log(error.message)   
-                    res.end("Erro no processamento de dados.")
+                    res.setHeader('Content-type', 'application/json');
+
+                    res.end(JSON.stringify({
+                        message: "Dados não recebidos com sucesso"
+                    }));
                 }
 
         });
@@ -109,25 +131,35 @@ http.createServer((req,res) => {
 
             try {
                     const finalData = JSON.parse(bodyWorkoutData);
-                    const workoutsData = require('./service/workout');
                     const resultworkoutData = workoutsData(finalData);
-                    const saveData = require('./database/databaseWorkout');
 
                     if (resultworkoutData == false){
                         res.statusCode = 400;
-                        console.log("Caiu no if do try");
-                        res.end("Erro ao processar informações.");
+                        console.log("Erro ao processar informações de treino");
+                        res.setHeader('Content-type', 'application/json');
+
+                        res.end(JSON.stringify({
+                            message: "Erro ao processar informações de treino"
+                        }));
                     } 
                     else {
                         const resultSaveDataWorkout = await saveData(finalData, resultworkoutData)
                         if (resultSaveDataWorkout == false){
                             console.log("Erro ao processar dados");
                             res.statusCode = 400;
-                            res.end("Bad request");
+                            res.setHeader('Content-type', 'application/json');
+
+                            res.end(JSON.stringify({
+                                message: "Erro ao salvar treino"
+                            }));
                         } else {
                             console.log("Treino registrado");
                             res.statusCode = 200;
-                            res.end("Treino registrado");
+                            res.setHeader('Content-type', 'application/json');
+
+                            res.end(JSON.stringify({
+                                message: "Trieno registrado com sucesso"
+                            }));
                         }
                     }
                     
@@ -135,7 +167,11 @@ http.createServer((req,res) => {
             catch (error){
                     res.statusCode = 400 
                     console.log(error.message)   
-                    res.end("Erro no processamento de dados.")
+                    res.setHeader('Content-type', 'application/json');
+
+                    res.end(JSON.stringify({
+                        message: "Erro ao salvar treino"
+                    }));
                 }
         });
     }
