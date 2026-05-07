@@ -6,20 +6,20 @@
             Crie sua conta e acessa nossa plataforma
           </p>
 
-          <form class="register-form">
+          <form class="register-form" @submit.prevent="cadastro">
             <div class="input-group">
               <label>Nome</label>
-              <input type="text" placeholder="Informe seu nome" />
+              <input v-model="name" type="text" placeholder="Informe seu nome" />
             </div>
 
             <div class="input-group">
               <label>Email</label>
-              <input type="email" placeholder="Informe seu email" />
+              <input v-model="email" type="email" placeholder="Informe seu email" />
             </div>
 
             <div class="input-group">
               <label>Senha</label>
-              <input type="password" placeholder="Informe sua senha" />
+              <input v-model="password" type="password" placeholder="Informe sua senha" />
             </div>
 
             <button type="submit">Entrar</button>
@@ -28,6 +28,9 @@
           <div class="login-link">
             <span>Já possui uma conta?</span>
             <router-link to="/">Entrar</router-link>
+              <p v-if="errorMessage" class="error-message">
+                {{ errorMessage }}
+              </p>
           </div>
         </div>
       </section>
@@ -41,6 +44,47 @@
       </section>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+
+async function cadastro() {
+  errorMessage.value = ''
+
+ // enviar uma requisição com objeto JSON junto com nome, email e senha
+ try {
+    const response = await fetch('http://localhost:8080/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name.value,
+        email: email.value,
+        password: password.value
+      })
+    })
+
+    const data = await response.json()
+    // Se o retorno estiver ok, então a página passa para login automaticamente
+    if (response.ok) {
+      router.push('/')
+    } else {
+      errorMessage.value = data.message
+    }
+  } catch (error) {
+    errorMessage.value = 'Erro ao conectar com o servidor'
+  }
+}
+</script>
 
 <style scoped>
 .register-page {
@@ -147,4 +191,5 @@ button {
   font-weight: 400;
   line-height: 1.35;
 }
+
 </style>

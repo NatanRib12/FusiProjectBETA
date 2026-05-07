@@ -18,45 +18,49 @@
           <div class="metrics">
             <div class="metric-card">
               <span>Distância</span>
-              <h2>X</h2>
+              <h2>{{ workoutResult.distance || 'X' }}</h2>
             </div>
 
             <div class="metric-card">
               <span>BPM</span>
-              <h2>X</h2>
+              <h2>{{ workoutResult.bpm || 'X' }}</h2>
             </div>
 
             <div class="metric-card">
               <span>Esforço</span>
-              <h2>X</h2>
+              <h2>{{ workoutResult.charge || 'X' }}</h2>
             </div>
           </div>
 
           <div class="recommendation">
-            Texto de recomendação
+             <span>Recomendação</span> 
+             {{ workoutResult.recommendation || 'Texto de recomendação' }}
           </div>
 
-          <button>Verificar histórico de registros</button>
+          <button @click="verHistorico">Verificar histórico de registros</button>
         </div>
 
-        <div class="right-panel">
+        <form class="right-panel" @submit.prevent="calcular">
           <div class="input-group">
             <label>Distância</label>
-            <input placeholder="Informe a distância" />
+            <input v-model="distance" placeholder="Informe a distância" />
           </div>
 
           <div class="input-group">
             <label>BPM</label>
-            <input placeholder="Informe o BPM" />
+            <input v-model="bpm" placeholder="Informe o BPM entre 0 a 200" />
           </div>
 
           <div class="input-group">
             <label>Esforço</label>
-            <input placeholder="Informe o esforço" />
+            <input v-model="charge" placeholder="Informe o esforço entre 1 a 10" />
           </div>
 
           <button>Enviar</button>
-        </div>
+          <p v-if="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </p>
+        </form>
       </section>
     </main>
 
@@ -67,6 +71,68 @@
 <script setup lang="ts">
 import Navbar from '../components/navbar.vue'
 import Footer from '../components/footer.vue'
+import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+
+const router = useRouter()
+const distance = ref('')
+const bpm = ref('')
+const charge = ref('')
+const errorMessage = ref('')
+
+// objeto reativo que altera os valores na página assim que alterados no sistema
+const workoutResult = ref({
+  distance: '',
+  bpm: '',
+  charge: '',
+  recommendation: ''
+})
+
+// Quando a página termina de ser criada, então o onMounted é ativado e executado. Caso não tenha nenhum valor no localStorrege, entende-se que não tem nenhum login feito
+onMounted(() => {
+  const athleteId = localStorage.getItem('athleteId')
+
+  if (!athleteId) {
+    router.push('/')
+  }
+})
+
+// Redireciona para página registration
+function verHistorico() {
+  router.push('/registration')
+}
+
+// Envia uma requisição POST convertendo os valores do objeto JSON em números. Se estive ok, esses valores são armazenados no workoutResult e imprimidos na tela do usuário
+async function calcular() {
+  errorMessage.value = ''
+
+ try {
+    const response = await fetch('http://localhost:8080/workouts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        athleteId: Number(localStorage.getItem('athleteId')),
+        distance: Number(distance.value),
+        bpm: Number(bpm.value),
+        charge: Number(charge.value)
+      })
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      workoutResult.value = data
+    } else {
+      errorMessage.value = data.message
+    }
+  } catch (error) {
+    errorMessage.value = 'Erro ao conectar com o servidor'
+  }
+}
+
+
 </script>
 
 <style scoped>
@@ -152,10 +218,15 @@ import Footer from '../components/footer.vue'
   border: 1px solid #d7d7d7;
   padding: 20px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+  flex-direction: column;
   color: #111;
   font-size: 1rem;
+}
+
+.recommendation span{
+    margin-right: 89%;
 }
 
 .left-panel button {

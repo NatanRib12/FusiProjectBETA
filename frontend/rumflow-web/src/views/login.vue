@@ -5,15 +5,15 @@
           <h1>Bem vindo</h1>
           <p>Acesse a plataforma com seu email e senha</p>
 
-          <form class="login-form">
+          <form class="login-form" @submit.prevent="enviarLogin">
             <div class="input-group">
               <label>Email</label>
-              <input type="email" placeholder="Informe seu email" />
+              <input v-model="email" type="email" placeholder="Informe seu email" />
             </div>
 
             <div class="input-group">
               <label>Senha</label>
-              <input type="password" placeholder="Informe sua senha" />
+              <input v-model="password" type="password" placeholder="Informe sua senha" />
             </div>
 
             <button type="submit">Entrar</button>
@@ -22,6 +22,9 @@
           <div class="register-link">
             <span>Não possui conta?</span>
               <router-link to="/register">Registrar</router-link>
+              <p v-if="errorMessage" class="error-message">
+                  {{ errorMessage }}
+              </p>
           </div>
         </div>
       </section>
@@ -35,6 +38,47 @@
       </section>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+
+async function enviarLogin() {
+  errorMessage.value = ''
+
+ // uma requisição POST com um objeto JSON com email e senha
+ try {
+    const response = await fetch('http://localhost:8080/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
+    })
+
+    const data = await response.json()
+
+    // se responde estiver ok, então o id do atleta é armazena no localStorege e a página passa para calculate
+    if (response.ok) {
+      localStorage.setItem('athleteId', data.athleteId)
+      router.push('/calculate')
+    } else {
+      errorMessage.value = data.message
+    }
+  } catch (error) {
+    errorMessage.value = 'Erro ao conectar com o servidor'
+  }
+}
+</script>
+
 
 <style scoped>
 .login-page{
@@ -147,4 +191,5 @@ button {
   font-weight: 400;
   line-height: 1.35;
 }
+
 </style>

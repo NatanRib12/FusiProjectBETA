@@ -4,23 +4,31 @@
 
     <main class="dashboard-content">
       <section class="header">
-        <h1>Histórico de registro</h1>
-        <p>Visualise seus desempenhos anteriores</p>
-      </section>
+          <div class="history-panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Distância</th>
+                <th>BPM</th>
+                <th>Esforço</th>
+                <th>Recomendação</th>
+                <th>Data</th>
+              </tr>
+            </thead>
 
-      <section class="dashboard-grid">
-        <div class="registratioin-painel">
-
-          <div class="painel">
-            <div class="painel-card">
-              <span>Distância</span>
-              <h2>X</h2>
-            </div>
-          </div>
-
-          <button>Verificar histórico de registros</button>
+            <!-- Imprime os valores retornados na tabela -->
+            <tbody>
+              <!-- Para cada dado dentro de workouts gere uma linha da lista e chamada de workout. O ID serve para o Vue comparar o que mudou e o que continua na lista, permitindo que ele possa sempre mante-la atualizada -->
+              <tr v-for="workout in workouts" :key="workout.id">
+                <td>{{ workout.distance }} Km</td>
+                <td>{{ workout.bpm }}</td>
+                <td>{{ workout.charge }}</td>
+                <td>{{ workout.recommendation }}</td>
+                <td>{{ formatDate(workout.workoutdate) }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
       </section>
     </main>
 
@@ -31,6 +39,53 @@
 <script setup lang="ts">
 import Navbar from '../components/navbar.vue'
 import Footer from '../components/footer.vue'
+import { useRouter } from 'vue-router'
+import { onMounted, ref } from 'vue'
+
+const router = useRouter()
+
+// Cria uma interface para impedir que o typescript nao leia a lista workout
+interface Workout {
+  id: number
+  distance: number
+  bpm: number
+  charge: number
+  recommendation: string
+  workoutdate: string
+}
+
+// Declarando que a variável workouts deve seguir a estrutura do objeto Workout
+const workouts = ref<Workout[]>([])
+
+// Retorna o horário no fuso-horário do Brasil
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('pt-BR')
+}
+
+// Faz uma requisição GET com o ID do usuário para obter todos os registros cadastrados no ID dele, para depois retornar
+async function loadWorkouts() {
+  const athleteId = localStorage.getItem('athleteId')
+
+  if (!athleteId) {
+    router.push('/')
+    return
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8080/workouts/${athleteId}`)
+    const data = await response.json()
+
+    if (response.ok) {
+      workouts.value = data
+    }
+  } catch (error) {
+    console.log('Erro ao carregar histórico')
+  }
+}
+
+onMounted(() => {
+  loadWorkouts()
+})
 </script>
 
 <style scoped>
@@ -46,18 +101,6 @@ import Footer from '../components/footer.vue'
   padding: 50px 45px;
 }
 
-.header h1 {
-  font-size: 2rem;
-  font-weight: 500;
-  color: #111;
-}
-
-.header p {
-  margin-top: 8px;
-  font-size: 1rem;
-  color: #6d6d6d;
-}
-
 .dashboard-grid {
   margin-top: 55px;
   display: flex;
@@ -65,58 +108,46 @@ import Footer from '../components/footer.vue'
   gap: 35px;
 }
 
-.registratioin-painel {
-  flex: 2;
+.history-panel {
+  width: 100%;
   background: #f5f5f5;
   border-radius: 10px;
-  padding: 25px;
+  padding: 10px;
   border: 1px solid #d7d7d7;
+  overflow-x: auto;
 }
 
-.registratioin-painel p {
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background: #ececec;
+}
+
+th {
+  text-align: left;
+  padding: 18px;
   font-size: 1rem;
-  line-height: 1.6;
+  font-weight: 500;
   color: #111;
 }
 
-.painel {
-  margin-top: 30px;
-  display: flex;
-  gap: 15px;
-}
-
-.painel-card {
-  flex: 1;
-  height: 120px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #d7d7d7;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.painel-card span {
+td {
+  padding: 18px;
+  border-top: 1px solid #e4e4e4;
   font-size: 0.95rem;
   color: #111;
 }
 
-
-.registratioin-painel button {
-  width: 100%;
-  margin-top: 18px;
-  height: 48px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(to right, #19a8f8, #0b4fd0);
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
+tbody tr:hover {
+  background: #f8f8f8;
 }
 
-
-button:hover {
-  opacity: 0.92;
-}
 </style>
+
+

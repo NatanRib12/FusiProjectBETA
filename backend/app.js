@@ -3,28 +3,37 @@ const saveDataRegister = require('./database/databaseRegister');
 const registerData = require('./service/register');
 const saveData = require('./database/databaseWorkout');
 const workoutsData = require('./service/workout');
+const getWorkoutHistory = require('./database/databaseHistory');
 const http = require('http')
 const port = 8080
 
-http.createServer((req,res) => {
+http.createServer(async (req,res) => {
+    // Evitar problema CORS
+    // Permite que todos possam consumir a API
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    // Permite todos esse métodos HTTPS
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    // Permite enviar content-type
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Verifica se é possível enviar requisições ao servidor
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
     let bodyWorkoutData = '';
     let bodyRegister = '';
     let bodyLogin = '';
  
-    if(req.url == '/') {
-        res.write('<h1>Tela inicial</h1>')
-        res.end()
-    }
-
     // Login
-    else if (req.url == '/login' && req.method == 'POST') {
+    if (req.url == '/login' && req.method == 'POST') {
         req.on('data', chunk => {
             bodyLogin += chunk.toString()
         });
 
         req.on('end', async () => {
-            // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
-
             try{
                     const finalLogin = JSON.parse(bodyLogin);
                     const resultLoginData = await checkLogin(finalLogin);
@@ -65,8 +74,6 @@ http.createServer((req,res) => {
         });
 
         req.on('end', async () => {
-            // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
-
             try{
                     const finalRegister = JSON.parse(bodyRegister);  
                     const resultRegisterData = registerData(finalRegister);
@@ -97,7 +104,6 @@ http.createServer((req,res) => {
                             res.end(JSON.stringify({
                                 message: "Conta criada com sucesso!",
                             }));
-                            // localStorage.
                         }
                     }
 
@@ -114,21 +120,36 @@ http.createServer((req,res) => {
     }
 
     // WORKOUTS
-    else if (req.url == '/workouts' && req.method == 'GET') {
-        res.write('Lista de treinos')
-        res.end()
+    else if (req.url.startsWith('/workouts/') && req.method == 'GET') {
+        try {
+            const athleteId = req.url.split('/')[2];
+
+            const history = await getWorkoutHistory(athleteId);
+
+            res.statusCode = 200;
+            res.setHeader('Content-type', 'application/json');
+
+            res.end(JSON.stringify(history));
+
+        } catch (error) {
+            console.log(error.message);
+
+            res.statusCode = 500;
+            res.setHeader('Content-type', 'application/json');
+
+            res.end(JSON.stringify({
+                message: 'Erro ao buscar histórico'
+            }));
+        }
     }
 
     // WORKOUTS
     else if (req.url == '/workouts' && req.method == 'POST') {
-        // Evento 'data' recebe chunck e converte para string e armazena tudo em body até receber todos as chunks
         req.on('data', chunk => {
             bodyWorkoutData += chunk.toString()
         });
 
         req.on('end', async () => {
-            // Assim que todas as chunck forem convertidas, o evento 'end' é iniciado e converte body para JSON permitindo que seja possível trabalhar com os dados.
-
             try {
                     const finalData = JSON.parse(bodyWorkoutData);
                     const resultworkoutData = workoutsData(finalData);
@@ -157,8 +178,12 @@ http.createServer((req,res) => {
                             res.statusCode = 200;
                             res.setHeader('Content-type', 'application/json');
 
+                            // RETORNA DADOS AQUI
                             res.end(JSON.stringify({
-                                message: "Trieno registrado com sucesso"
+                                "distance": finalData.distance,
+                                "bpm": finalData.bpm,
+                                "charge": finalData.charge,
+                                "recommendation": resultworkoutData.recommendation
                             }));
                         }
                     }

@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 
 async function saveWorkout(finalData, resultworkoutData) {
+    // Variável com informações para conectar ao banco de dados
     const client = new Client({
         host: "localhost",
         user: "postgres",
@@ -9,18 +10,17 @@ async function saveWorkout(finalData, resultworkoutData) {
         database: "PulseLab"
     });
 
+    // Utiliza requisição INSERT INTO para inserir valores dentro da tabela workouts de acordo com o ID do usuário
     try {
             await client.connect();
-            // console.log("dados recebido na page bd", finalData, resultworkoutData);
 
-            const atletamockado = 1
             const query = `INSERT INTO workouts (atleta_id, distance, bpm, charge, traningLoad, recoveryscore, recommendation) 
             VALUES ($1, $2, $3, $4, $5, $6, $7) 
             RETURNING *;`
 
             // Mapeando os dados que vêm dos seus objetos finalData e resultworkoutData
             const workoutDataValues = [
-                atletamockado,
+                finalData.athleteId,
                 finalData.distance,
                 finalData.bpm,
                 finalData.charge,
@@ -29,10 +29,9 @@ async function saveWorkout(finalData, resultworkoutData) {
                 resultworkoutData.recommendation
             ];
 
-            console.log(workoutDataValues)
-
             const res = await client.query(query, workoutDataValues);
             await client.end();
+
             return true;
         } 
         catch (error){

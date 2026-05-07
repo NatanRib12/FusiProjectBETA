@@ -23,8 +23,7 @@ async function loginAthlete(resultLoginData) {
 
             const res = await client.query(query, loginValues);
             await client.end();
-            console.log(res.rows[0])
-            
+           
             if (res.rows.length > 0){
                 return res.rows[0];
             } else {
