@@ -52,19 +52,6 @@ import Navbar from '../components/navbar.vue'
 import Footer from '../components/footer.vue'
 import manRunning from '../assets/style/imgs/manrunning.jpg'
 import womanRunning from '../assets/style/imgs/womanrunning.jpg'
-import { useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-
-const router = useRouter()
-
-onMounted(() => {
-  const athleteId = localStorage.getItem('athleteId')
-
-  if (!athleteId) {
-    router.push('/')
-  }
-})
-
 </script>
 
 <style scoped>

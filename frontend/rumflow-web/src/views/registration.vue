@@ -66,11 +66,6 @@ function formatDate(date: string) {
 async function loadWorkouts() {
   const athleteId = localStorage.getItem('athleteId')
 
-  if (!athleteId) {
-    router.push('/')
-    return
-  }
-
   try {
     const response = await fetch(`http://localhost:8080/workouts/${athleteId}`)
     const data = await response.json()

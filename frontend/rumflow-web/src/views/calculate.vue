@@ -72,7 +72,7 @@
 import Navbar from '../components/navbar.vue'
 import Footer from '../components/footer.vue'
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 const router = useRouter()
 const distance = ref('')
@@ -88,14 +88,6 @@ const workoutResult = ref({
   recommendation: ''
 })
 
-// Quando a página termina de ser criada, então o onMounted é ativado e executado. Caso não tenha nenhum valor no localStorrege, entende-se que não tem nenhum login feito
-onMounted(() => {
-  const athleteId = localStorage.getItem('athleteId')
-
-  if (!athleteId) {
-    router.push('/')
-  }
-})
 
 // Redireciona para página registration
 function verHistorico() {
@@ -131,8 +123,6 @@ async function calcular() {
     errorMessage.value = 'Erro ao conectar com o servidor'
   }
 }
-
-
 </script>
 
 <style scoped>
